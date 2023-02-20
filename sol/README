@@ -1,0 +1,68 @@
+336CA PETRUC RARES
+                        TEMA 3 ASC
+                            CUDA
+
+1) Detalii generale:
+    Am pornit de la scheletul de cod. Am folosit vectori din namespace-ul de
+std pentru a stoca informatiile, intrucat nu stiam de la inceput dimensiunea
+fisierului de intrare. Ulterior, in longits, lats, pops, results am adaugat
+datele din vectori. Am lansat in executie atatea blocuri si threaduri cate
+linii in fisierul de intrare sunt, asta dupa ce am oprit din executie
+threadurile aferente unui index care este mai mare decat dimensiunea
+fisierului, intrucat ar genera un acces invalid:
+    "if (idx >= file_size) return;"
+    Am folosit algoritmul de geoDistance pe care l-am adaptat pentru
+a optimiza accesul la variabile si calculul de date.
+
+2) Moduri de optimizare:
+    In functia master, am incercat sa salvez cat mai multe variabile
+locale threadului, cat sa fie accesibile, sper eu, din registri. In
+acelasi timp, am incercat sa realizez operatiile ca si cosinsul, 
+functie de sinusul deja calculat (sqrt(1 - sin^2(x))). Am facut
+adunarile/verificarile la acumulatori in perechi in felul urmator:
+    pentru primul element/oras:
+    (1, 2) si (2, 1)
+    (1, 3) si (3, 1)
+    ...............
+    (1, dim_fisier) si (dim_fisier, 1)
+
+    pentru al doilea element/oras:
+    (2, 3) si (3, 2)
+    (2, 4) si (4, 2)
+    ................
+    (2, dim_fisier) si (dim_fisier, 2)
+
+    ...............
+    pentru penultimul element/oras:
+    (dim_fisier - 1, dim_fisier) si (dim_fisier, dim_fisier - 1)
+
+    pentru ultimul element/oras:
+    -
+
+    Practic, ce am scris mai sus se rezuma in for-ul realizat de
+fiecare thread corespunzator unui oras din fisierul de intrare,
+cu conditia:
+    if (6371.f * acos(cs) <= my_km_range) {
+            atomicAdd(&results[idx], pops[i]);
+            atomicAdd(&results[i], my_pop);
+    }
+
+3) Concluzii:
+    Am urmarit laboratorul indeaproape pentru rezolvarea acestei teme si
+mi s-a parut suficienta informatia disponibila pe ocw pentru o rezolvare
+decenta. Mi-a placut tema, am cautat multe optimizari pana a ajunge la
+varianta asta (mai intai am facut cu masters si workersi sub diverse forme,
+am folosit uneori atomicAdd, alteori add clasic, pe scurt am facut mai
+multe iteratii ale problemei pana la cea finala, corecta).
+    Timpi finali:
+    P100: 18.848s (ucsc480-wn151)
+    A100: 16.923s (sprmcrogpu-wn140)
+
+
+
+4) Sugestii:
+    Au trecut cateva zile bune pana cand am putut testa si pe fep.
+Eu am avut noroc ca am putut rula si local, macar cat sa testez
+corectitudinea codului. Acest lucru a determinat amanari, din cauza
+ca am obtinut timeout pe fep, desi pe local ma incadram in limitele
+de timp si obtineam si rezultate corecte.
